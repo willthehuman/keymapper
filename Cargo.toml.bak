@@ -25,7 +25,3 @@ lazy_static = "1.4.0"
 winapi = { version = "0.3", features = ["winuser"] }
 user32-sys = "0.2.0"
 RustyXML = "0.3.0"
-
-[lib]
-name = "keymapper"
-path = "src/main.rs"
