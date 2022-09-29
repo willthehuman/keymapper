@@ -19,10 +19,10 @@ use crate::profiles::*;
 use crate::settings::Settings;
 use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
 
-pub fn main() {
+pub fn run(profile_path: &str) {
     log::info!("Starting Keymapper..");
     let _settings = Settings::load().expect("Can't load settings.");
-    let profiles = profiles::load_profiles().expect("Can't load profiles.");
+    let profiles = profiles::load_profiles_path(profile_path).expect("Can't load profiles.");
     let profiles = Arc::new(profiles);
 
     let last_mouse_wheel_time: RefCell<HashMap<bool, Instant>> = RefCell::new(HashMap::new());
@@ -187,3 +187,5 @@ fn is_match(binding: &KeyBinding, e: &KeyboardEvent) -> bool {
     let alt_matched = binding.alt.into_iter().all(|v| v == e.alt());
     vcode_matched && up_matched && alt_matched
 }
+
+fn main() {}

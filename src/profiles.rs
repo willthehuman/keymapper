@@ -45,6 +45,18 @@ pub struct Key {
     pub delay: Option<Duration>,
 }
 
+pub fn load_profiles_path(path: &str) -> Result<Vec<Profile>, AppError> {
+    let mut file = File::open(path)?;
+    let mut buffer = String::new();
+    file.read_to_string(&mut buffer)?;
+
+    let root: Element = buffer
+        .parse()
+        .map_err(|_| AppError::new("Error parsing profiles.xml"))?;
+
+    read_children(&root, read_profile)
+}
+
 pub fn load_profiles() -> Result<Vec<Profile>, AppError> {
     let mut file = File::open("resources/profiles.xml")?;
     let mut buffer = String::new();
