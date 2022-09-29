@@ -20,8 +20,6 @@ use crate::settings::Settings;
 use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
 
 pub fn main() {
-    log4rs::init_file("resources/log.toml", Default::default())
-        .expect("Can't load logging config.");
     log::info!("Starting Keymapper..");
     let _settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
