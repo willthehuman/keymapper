@@ -19,7 +19,7 @@ use crate::profiles::*;
 use crate::settings::Settings;
 use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
 
-fn main() {
+pub fn main() {
     log4rs::init_file("resources/log.toml", Default::default())
         .expect("Can't load logging config.");
     log::info!("Starting Keymapper..");
