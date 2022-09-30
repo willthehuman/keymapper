@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use futures::future;
-use futures::future::AbortHandle;
+use futures::future::{AbortHandle, Ready};
 use tokio::runtime::Builder;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
@@ -19,7 +19,8 @@ use crate::profiles::*;
 use crate::settings::Settings;
 use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
 
-pub fn main() {
+#[tokio::main]
+pub async fn main() {
     log::info!("Starting Keymapper..");
     let _settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
@@ -132,11 +133,10 @@ pub fn main() {
     windows::message_loop();
 
     log::info!("Shutting down Keymapper..");
-}
 
-pub fn stop() {
-    // quit the program
-    std::process::exit(0);
+    // return a completed future
+    let duration = std::time::Duration::from_millis(100);
+    sleep(duration).await
 }
 
 struct MatchedEvent {
