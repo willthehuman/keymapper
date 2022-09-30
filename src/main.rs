@@ -134,6 +134,11 @@ pub fn run(profile_path: &str) {
     log::info!("Shutting down Keymapper..");
 }
 
+pub fn stop() {
+    // quit the program
+    std::process::exit(0);
+}
+
 struct MatchedEvent {
     profiles: Arc<Vec<Profile>>,
     profile_index: usize,
