@@ -6,6 +6,7 @@ mod windows;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::future::IntoFuture;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -19,8 +20,7 @@ use crate::profiles::*;
 use crate::settings::Settings;
 use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
 
-#[tokio::main]
-pub async fn main() {
+pub fn main() {
     log::info!("Starting Keymapper..");
     let _settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
@@ -133,10 +133,6 @@ pub async fn main() {
     windows::message_loop();
 
     log::info!("Shutting down Keymapper..");
-
-    // return a completed future
-    let duration = std::time::Duration::from_millis(100);
-    sleep(duration).await
 }
 
 struct MatchedEvent {
