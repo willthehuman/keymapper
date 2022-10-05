@@ -1,3 +1,5 @@
+extern crate core;
+
 mod errors;
 mod profiles;
 mod settings;
@@ -22,7 +24,7 @@ use tokio::time::sleep;
 
 use crate::profiles::*;
 use crate::settings::Settings;
-use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
+use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, NeptuneEvent, Window};
 
 pub fn main() {
     println!("Starting Keymapper..");
@@ -135,6 +137,9 @@ pub fn main() {
                     }
                     InputEvent::Mouse(MouseEvent::MouseMove { .. }) => {
                         //println!("Mouse move");
+                    }
+                    InputEvent::Neptune(NeptuneEvent::Test { .. }) => {
+                        //println!("Neptune");
                     }
                 }
 

@@ -29,9 +29,16 @@ impl Hook {
             (&mut handler_for_mouse.borrow_mut() as &mut H)(&e)
         });
 
+        let handler_for_neptune = handler.clone();
+        let neptune_hook = Hook::set_neptune_hook(move |e| {
+            let e = InputEvent::Neptune(*e);
+            (&mut handler_for_neptune.borrow_mut() as &mut H)(&e)
+        });
+
         let mut hooks = Vec::new();
         hooks.extend(keyboard_hook._hook_int.into_iter());
         hooks.extend(mouse_hook._hook_int.into_iter());
+        hooks.extend(neptune_hook._hook_int.into_iter());
 
         Hook { _hook_int: hooks }
     }
@@ -131,6 +138,35 @@ impl Hook {
             }
         })
     }
+
+    pub fn set_neptune_hook<H: Fn(&NeptuneEvent) -> HookAction + 'static>(handler: H) -> Hook {
+        NEPTUNE_HOOKS.with(|hooks| {
+            let mut hooks = hooks.borrow_mut();
+            let handle = unsafe {
+                SetWindowsHookExW(WH_CALLWNDPROC, Some(neptune_hook_proc), ptr::null_mut(), 0)
+            };
+
+            let handler = move |_: i32, w_param: usize, l_param: isize| {
+                match w_param as u32 {
+                    RAWINPUT_data => {
+                        let event = NeptuneEvent::Test {
+                            state: w_param as i32,
+                        };
+                        handler(&event)
+                    }
+                }
+            };
+
+            let hook = HookInternal {
+                handle,
+                handler: Box::new(handler),
+            };
+
+            Hook {
+                _hook_int: vec![hooks.push(hook)],
+            }
+        })
+    }
 }
 
 pub struct HookInternal {
@@ -157,6 +193,7 @@ pub enum HookAction {
 pub enum InputEvent {
     Keyboard(KeyboardEvent),
     Mouse(MouseEvent),
+    Neptune(NeptuneEvent),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -188,6 +225,11 @@ pub enum MouseEvent {
     MouseMove { x: i32, y: i32 },
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum NeptuneEvent {
+    Test { state: i32 },
+}
+
 /* PRIVATE */
 unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: usize, l_param: isize) -> isize {
     base_hook_proc(&KEYBOARD_HOOKS, n_code, w_param, l_param)
@@ -195,6 +237,10 @@ unsafe extern "system" fn keyboard_hook_proc(n_code: i32, w_param: usize, l_para
 
 unsafe extern "system" fn mouse_hook_proc(n_code: i32, w_param: usize, l_param: isize) -> isize {
     base_hook_proc(&MOUSE_HOOKS, n_code, w_param, l_param)
+}
+
+unsafe extern "system" fn neptune_hook_proc(n_code: i32, w_param: usize, l_param: isize) -> isize {
+    base_hook_proc(&NEPTUNE_HOOKS, n_code, w_param, l_param)
 }
 
 unsafe fn base_hook_proc(
@@ -232,3 +278,4 @@ unsafe fn base_hook_proc(
 
 thread_local!(static KEYBOARD_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
 thread_local!(static MOUSE_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
+thread_local!(static NEPTUNE_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
