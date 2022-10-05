@@ -84,6 +84,39 @@ impl Hook {
                         };
                         handler(&event)
                     }
+                    WM_LBUTTONDOWN | WM_RBUTTONDOWN => {
+                        let event = MouseEvent::MouseClick {
+                            x: mshs.pt.x,
+                            y: mshs.pt.y,
+                            button: match w_param as u32 {
+                                WM_LBUTTONDOWN => 0,
+                                WM_RBUTTONDOWN => 1,
+                                _ => 2,
+                            },
+                            is_down: true,
+                        };
+                        handler(&event)
+                    }
+                    WM_LBUTTONUP | WM_RBUTTONUP => {
+                        let event = MouseEvent::MouseClick {
+                            x: mshs.pt.x,
+                            y: mshs.pt.y,
+                            button: match w_param as u32 {
+                                WM_LBUTTONUP => 0,
+                                WM_RBUTTONUP => 1,
+                                _ => 2,
+                            },
+                            is_down: false,
+                        };
+                        handler(&event)
+                    }
+                    WM_MOUSEMOVE => {
+                        let event = MouseEvent::MouseMove {
+                            x: mshs.pt.x,
+                            y: mshs.pt.y,
+                        };
+                        handler(&event)
+                    }
                     _ => HookAction::Forward,
                 }
             };
@@ -143,7 +176,7 @@ impl KeyboardEvent {
         self.flags & LLKHF_UP > 0
     }
 
-    pub fn syntetic(&self) -> bool {
+    pub fn synthetic(&self) -> bool {
         self.extra != 0
     }
 }
@@ -151,6 +184,8 @@ impl KeyboardEvent {
 #[derive(Debug, Copy, Clone)]
 pub enum MouseEvent {
     MouseWheel { x: i32, y: i32, delta: i16 },
+    MouseClick { x: i32, y: i32, button:u8, is_down: bool },
+    MouseMove { x: i32, y: i32 },
 }
 
 /* PRIVATE */

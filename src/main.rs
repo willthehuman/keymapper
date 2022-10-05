@@ -4,14 +4,18 @@ mod settings;
 mod util;
 mod windows;
 
+use std::any::Any;
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::future::IntoFuture;
+use std::fmt::Debug;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Instant;
 
 use futures::future;
 use futures::future::{AbortHandle, Ready};
+use log::log;
 use tokio::runtime::Builder;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
@@ -21,7 +25,7 @@ use crate::settings::Settings;
 use crate::windows::{Hook, HookAction, InputEvent, KeyboardEvent, MouseEvent, Window};
 
 pub fn main() {
-    log::info!("Starting Keymapper..");
+    println!("Starting Keymapper..");
     let _settings = Settings::load().expect("Can't load settings.");
     let profiles = profiles::load_profiles().expect("Can't load profiles.");
     let profiles = Arc::new(profiles);
@@ -39,6 +43,10 @@ pub fn main() {
     rt.spawn(async { process_event_loop(rx).await });
 
     let _hook = Hook::set_input_hook(move |e| {
+        //dereference the event
+        let input_test = e.borrow();
+        // print the vk code
+        println!("vk: {}", format!("{:?}", input_test));
         let action = profiles.iter().enumerate().fold(
             HookAction::Forward,
             |result, (profile_index, profile)| {
@@ -62,7 +70,7 @@ pub fn main() {
                     InputEvent::Keyboard(e) => {
                         for (binding_index, binding) in profile.bindings.iter().enumerate() {
                             if let Binding::Key(binding) = binding {
-                                if is_match(&binding, &e) && !e.syntetic() && should_process() {
+                                if is_match(&binding, &e) && !e.synthetic() && should_process() {
                                     log::trace!(
                                         "Profile \"{}\" blocked key: {:X} + {:X}",
                                         profile.name,
@@ -121,6 +129,12 @@ pub fn main() {
                                 }
                             }
                         }
+                    }
+                    InputEvent::Mouse(MouseEvent::MouseClick { .. }) => {
+                        //println!("Mouse click");
+                    }
+                    InputEvent::Mouse(MouseEvent::MouseMove { .. }) => {
+                        //println!("Mouse move");
                     }
                 }
 
