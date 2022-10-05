@@ -151,9 +151,18 @@ impl Hook {
                 println!("Neptune hook: {}", cwp.message);
                 if cwp.message == WM_INPUT {
                     let hrawinput_handle = unsafe { &*(cwp.lParam as *const HRAWINPUT) };
+                    let header_pointer = GetRawInputData(
+                        *hrawinput_handle,
+                        RID_HEADER,
+                        ptr::null_mut(),
+                        &mut 0,
+                        0,
+                    );
                     let data_pointer = GetRawInputData(*hrawinput_handle, RID_INPUT, ptr::null_mut(), &mut 0, 0);
 
-                    let event = NeptuneEvent::Test{ state: data_pointer as i32 };
+                    let header = unsafe { &*(header_pointer as *const RAWINPUTHEADER) };
+                    let data = unsafe { &*(data_pointer as *const RAWINPUT_data) };
+                    let event = NeptuneEvent::Test{ state: header.dwType as i32 };
                     handler(&event)
                 } else {
                     HookAction::Forward
