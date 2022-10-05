@@ -146,14 +146,17 @@ impl Hook {
                 SetWindowsHookExW(WH_CALLWNDPROC, Some(neptune_hook_proc), ptr::null_mut(), 0)
             };
 
-            let handler = move |_: i32, w_param: usize, l_param: isize| {
-                match w_param as u32 {
-                    RAWINPUT_data => {
-                        let event = NeptuneEvent::Test {
-                            state: w_param as i32,
-                        };
-                        handler(&event)
-                    }
+            let handler = move |_: i32, w_param: usize, l_param: isize| unsafe {
+                let cwp = unsafe { &*(l_param as *const CWPSTRUCT) };
+                println!("Neptune hook: {}", cwp.message);
+                if cwp.message == WM_INPUT {
+                    let hrawinput_handle = unsafe { &*(cwp.lParam as *const HRAWINPUT) };
+                    let data_pointer = GetRawInputData(*hrawinput_handle, RID_INPUT, ptr::null_mut(), &mut 0, 0);
+
+                    let event = NeptuneEvent::Test{ state: data_pointer as i32 };
+                    handler(&event)
+                } else {
+                    HookAction::Forward
                 }
             };
 

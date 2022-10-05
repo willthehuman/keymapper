@@ -138,8 +138,8 @@ pub fn main() {
                     InputEvent::Mouse(MouseEvent::MouseMove { .. }) => {
                         //println!("Mouse move");
                     }
-                    InputEvent::Neptune(NeptuneEvent::Test { .. }) => {
-                        //println!("Neptune");
+                    InputEvent::Neptune(e) => {
+                        println!("vk: {}", format!("{:?}", e.borrow()));
                     }
                 }
 
