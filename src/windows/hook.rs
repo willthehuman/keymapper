@@ -5,6 +5,7 @@ use std::thread::LocalKey;
 
 use winapi::shared::minwindef::HIWORD;
 use winapi::shared::windef::*;
+use winapi::um::processthreadsapi::GetCurrentThreadId;
 use winapi::um::winuser::*;
 
 use crate::util::*;
@@ -142,31 +143,32 @@ impl Hook {
     pub fn set_neptune_hook<H: Fn(&NeptuneEvent) -> HookAction + 'static>(handler: H) -> Hook {
         NEPTUNE_HOOKS.with(|hooks| {
             let mut hooks = hooks.borrow_mut();
-            let handle = unsafe {
-                SetWindowsHookExW(WH_CALLWNDPROC, Some(neptune_hook_proc), ptr::null_mut(), 0)
+            let current_thread_id = unsafe { GetCurrentThreadId() };
+            let raw_input_devices = [
+                RAWINPUTDEVICE {
+                    usUsagePage: 0xFF00,
+                    usUsage: 0x0001,
+                    dwFlags: RIDEV_INPUTSINK,
+                    hwndTarget: ptr::null_mut(),
+                }
+            ];
+            //transform to pointer
+            let is_registered = unsafe { RegisterRawInputDevices(raw_input_devices.as_ptr(), 1, std::mem::size_of::<RAWINPUTDEVICE>() as u32) };
+
+            if is_registered == 0 {
+                panic!("Failed to register raw input device");
+            }
+
+            let mut handle = unsafe {
+                SetWindowsHookExW(WH_GETMESSAGE, Some(neptune_hook_proc), ptr::null_mut(), current_thread_id )
             };
 
             let handler = move |_: i32, w_param: usize, l_param: isize| unsafe {
-                let cwp = unsafe { &*(l_param as *const CWPSTRUCT) };
-                println!("Neptune hook: {}", cwp.message);
-                if cwp.message == WM_INPUT {
-                    let hrawinput_handle = unsafe { &*(cwp.lParam as *const HRAWINPUT) };
-                    let header_pointer = GetRawInputData(
-                        *hrawinput_handle,
-                        RID_HEADER,
-                        ptr::null_mut(),
-                        &mut 0,
-                        0,
-                    );
-                    let data_pointer = GetRawInputData(*hrawinput_handle, RID_INPUT, ptr::null_mut(), &mut 0, 0);
-
-                    let header = unsafe { &*(header_pointer as *const RAWINPUTHEADER) };
-                    let data = unsafe { &*(data_pointer as *const RAWINPUT_data) };
-                    let event = NeptuneEvent::Test{ state: header.dwType as i32 };
-                    handler(&event)
-                } else {
-                    HookAction::Forward
-                }
+                let message_structure = unsafe { &*(l_param as *const MSG) };
+                 let event = NeptuneEvent::Test {
+                      state: message_structure.message as i32,
+                 };
+                handler(&event)
             };
 
             let hook = HookInternal {
@@ -251,8 +253,8 @@ unsafe extern "system" fn mouse_hook_proc(n_code: i32, w_param: usize, l_param: 
     base_hook_proc(&MOUSE_HOOKS, n_code, w_param, l_param)
 }
 
-unsafe extern "system" fn neptune_hook_proc(n_code: i32, w_param: usize, l_param: isize) -> isize {
-    base_hook_proc(&NEPTUNE_HOOKS, n_code, w_param, l_param)
+unsafe extern "system" fn neptune_hook_proc(code: i32, w_param: usize, l_param: isize) -> isize {
+    base_hook_proc(&NEPTUNE_HOOKS, code, w_param, l_param)
 }
 
 unsafe fn base_hook_proc(
@@ -288,6 +290,6 @@ unsafe fn base_hook_proc(
     CallNextHookEx(ptr::null_mut(), n_code, w_param, l_param)
 }
 
+thread_local!(static NEPTUNE_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
 thread_local!(static KEYBOARD_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
 thread_local!(static MOUSE_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
-thread_local!(static NEPTUNE_HOOKS: RefCell<WeakCollection<HookInternal>> = RefCell::new(WeakCollection::new()));
