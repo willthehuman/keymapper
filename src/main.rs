@@ -136,7 +136,7 @@ pub fn main() {
                         //println!("Mouse move");
                     }
                     InputEvent::Neptune(e) => {
-                        println!("neptune: {}", format!("{:?}", e.borrow()));
+                        println!("neptune: {:?}", e);
                     }
                 }
 
