@@ -45,10 +45,6 @@ pub fn main() {
     rt.spawn(async { process_event_loop(rx).await });
 
     let _hook = Hook::set_input_hook(move |e| {
-        //dereference the event
-        let input_test = e.borrow();
-        // print the vk code
-        println!("vk: {}", format!("{:?}", input_test));
         let action = profiles.iter().enumerate().fold(
             HookAction::Forward,
             |result, (profile_index, profile)| {
@@ -70,6 +66,7 @@ pub fn main() {
 
                 match e {
                     InputEvent::Keyboard(e) => {
+                        println!("Keyboard event: {:?}", e);
                         for (binding_index, binding) in profile.bindings.iter().enumerate() {
                             if let Binding::Key(binding) = binding {
                                 if is_match(&binding, &e) && !e.synthetic() && should_process() {
@@ -133,13 +130,13 @@ pub fn main() {
                         }
                     }
                     InputEvent::Mouse(MouseEvent::MouseClick { .. }) => {
-                        //println!("Mouse click");
+                        println!("mouse: {:?}", e);
                     }
                     InputEvent::Mouse(MouseEvent::MouseMove { .. }) => {
                         //println!("Mouse move");
                     }
                     InputEvent::Neptune(e) => {
-                        println!("vk: {}", format!("{:?}", e.borrow()));
+                        println!("neptune: {}", format!("{:?}", e.borrow()));
                     }
                 }
 
